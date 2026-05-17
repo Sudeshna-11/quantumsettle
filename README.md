@@ -1,5 +1,10 @@
 # QuantumSettle
 
+[![CI](https://github.com/Sudeshna-11/quantumsettle/actions/workflows/ci.yml/badge.svg)](https://github.com/Sudeshna-11/quantumsettle/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+![Oracle](https://img.shields.io/badge/Oracle-23ai-red)
+![Python](https://img.shields.io/badge/Python-3.11%2B-blue)
+
 > **A focused PL/SQL optimisation showcase on Oracle 23ai.**
 > Three phases — Ingest, Process, Report — each shipped in two flavours
 > ("Optimized" and "Not Optimized") so the benchmark prints the speedup
