@@ -1,0 +1,46 @@
+# Env / secrets
+.env
+.env.local
+*.pem
+*.key
+
+# Personal Claude Code config (per-developer; team-wide settings go in
+# .claude/settings.json which is not gitignored)
+.claude/settings.local.json
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+build/
+dist/
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Oracle artifacts that leak out of the container occasionally
+*.dbf
+*.log
+*.aud
+*.trc
+
+# Generated data + benchmark output
+data/staged/
+data/generated/
+bench/results/
+*.csv.gz
+
+# Coverage
+.coverage
+htmlcov/

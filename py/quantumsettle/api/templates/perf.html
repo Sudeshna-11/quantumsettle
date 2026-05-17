@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Benchmark — QuantumSettle{% endblock %}
+{% block head %}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+{% endblock %}
+{% block content %}
+
+<h2 class="h4 mb-3">Optimized vs. Not Optimized — latest per phase</h2>
+<p class="muted mb-4">
+  Sourced from <code>perf_metrics</code>. Reproduce with
+  <code>python -m quantumsettle.bench.run --trades 20000 --days 5</code>.
+</p>
+
+{% if chart.labels %}
+<div class="card mb-4">
+  <div class="card-body">
+    <canvas id="bench" style="max-height: 320px;"></canvas>
+  </div>
+</div>
+<script>
+  const labels        = {{ chart.labels        | tojson }};
+  const optimized     = {{ chart.optimized     | tojson }};
+  const notOptimized  = {{ chart.not_optimized | tojson }};
+  new Chart(document.getElementById('bench'), {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [
+        { label: 'Optimized (s)',     data: optimized,    backgroundColor: '#1b5e20' },
+        { label: 'Not optimized (s)', data: notOptimized, backgroundColor: '#0d3b66' }
+      ]
+    },
+    options: {
+      responsive: true,
+      scales: { y: { beginAtZero: true, title: { display: true, text: 'elapsed seconds' } } },
+      plugins: { legend: { position: 'top' } }
+    }
+  });
+</script>
+
+<table class="table table-tight">
+  <thead><tr>
+    <th>Phase</th>
+    <th class="num">Optimized (s)</th>
+    <th class="num">Not optimized (s)</th>
+    <th class="num">Speedup</th>
+  </tr></thead>
+  <tbody>
+    {% for i in range(chart.labels | length) %}
+      <tr>
+        <td>{{ chart.labels[i] }}</td>
+        <td class="num">{{ "{:.2f}".format(chart.optimized[i]) }}</td>
+        <td class="num">{{ "{:.2f}".format(chart.not_optimized[i]) }}</td>
+        <td class="num">
+          {% set sp = chart.speedups[i] %}
+          {% if sp is none %}<span class="muted">—</span>
+          {% elif sp >= 2   %}<span class="pill pill-good">{{ sp }}×</span>
+          {% elif sp >= 1.1 %}<span class="pill pill-neutral">{{ sp }}×</span>
+          {% else %}<span class="pill pill-bad">{{ sp }}× <small>(noise)</small></span>{% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+  <div class="alert alert-info">
+    No paired OPTIMIZED / NOT_OPTIMIZED rows in <code>perf_metrics</code> yet.
+    Run <code>python -m quantumsettle.bench.run --trades 20000 --days 5</code>.
+  </div>
+{% endif %}
+
+<h3 class="h6 mt-4">Recent metrics (raw)</h3>
+<table class="table table-sm table-tight">
+  <thead><tr>
+    <th>Operation</th><th>Variant</th>
+    <th class="num">Elapsed (ms)</th>
+    <th class="num">Rows</th>
+    <th>Captured</th>
+  </tr></thead>
+  <tbody>
+    {% for m in metrics %}
+      <tr>
+        <td>{{ m[0] }}</td>
+        <td>
+          {% if m[1] == 'OPTIMIZED'     %}<span class="pill pill-opt">OPTIMIZED</span>
+          {% elif m[1] == 'NOT_OPTIMIZED'%}<span class="pill pill-notopt">NOT&nbsp;OPTIMIZED</span>
+          {% else %}<span class="pill">{{ m[1] }}</span>{% endif %}
+        </td>
+        <td class="num">{{ "{:,}".format(m[2] | int) }}</td>
+        <td class="num">{{ "{:,}".format(m[3] | int) if m[3] else "—" }}</td>
+        <td class="muted">{{ m[4] }}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

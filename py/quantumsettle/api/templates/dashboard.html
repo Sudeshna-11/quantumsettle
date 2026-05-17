@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — QuantumSettle{% endblock %}
+{% block content %}
+
+<form class="row g-2 align-items-end mb-4" method="get" action="/">
+  <div class="col-auto">
+    <label for="d" class="form-label muted mb-1">Trade date</label>
+    <input type="date" name="d" id="d" value="{{ business_date or '' }}"
+           class="form-control" list="dates">
+    <datalist id="dates">
+      {% for ad in available_dates %}<option value="{{ ad }}">{% endfor %}
+    </datalist>
+  </div>
+  <div class="col-auto">
+    <button type="submit" class="btn btn-primary">View</button>
+  </div>
+  {% if business_date %}
+  <div class="col-auto ms-auto">
+    <span class="pill">{{ trade_total | int }} trades / {{ processed_total | int }} processed</span>
+  </div>
+  {% endif %}
+</form>
+
+{% if not business_date %}
+  <div class="alert alert-info">
+    No trades loaded yet. Try
+    <code>python -m quantumsettle.faker.run all</code> then
+    <code>python -m quantumsettle.scripts.ingest load --variant optimized &lt;file&gt;</code>.
+  </div>
+{% else %}
+
+<div class="row g-4">
+
+  <!-- Phase 2 result: processing status -->
+  <div class="col-12 col-xl-5">
+    <div class="card">
+      <div class="card-body">
+        <h2 class="h5 phase-2">Phase 2 — Process</h2>
+        <p class="muted">Trades for {{ business_date }} grouped by `processed` flag.
+          Run the Process phase to flip 'N' → 'Y'.</p>
+        <table class="table table-tight">
+          <thead><tr>
+            <th>Status</th><th>Label</th><th class="num">Trades</th>
+          </tr></thead>
+          <tbody>
+            {% for r in proc_rows %}
+              <tr>
+                <td>
+                  {% if r[0] == 'Y' %}<span class="pill pill-good">{{ r[0] }}</span>
+                  {% else %}<span class="pill pill-neutral">{{ r[0] }}</span>{% endif %}
+                </td>
+                <td>{{ r[1] }}</td>
+                <td class="num">{{ "{:,}".format(r[2] | int) }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phase 3 result: daily P&L -->
+  <div class="col-12 col-xl-7">
+    <div class="card">
+      <div class="card-body">
+        <h2 class="h5 phase-3">Phase 3 — Report (Daily P&amp;L)</h2>
+        <p class="muted">From <code>MV_DAILY_PNL</code> (refresh fast on commit).
+          Same data, same numbers regardless of which variant you call —
+          the optimized version is just faster.</p>
+        <div style="max-height: 30rem; overflow:auto">
+        <table class="table table-tight">
+          <thead><tr>
+            <th>Account</th><th>Ccy</th>
+            <th class="num">Trades</th>
+            <th class="num">Net qty</th>
+            <th class="num">Gross vol</th>
+            <th class="num">Net P&amp;L</th>
+          </tr></thead>
+          <tbody>
+            {% for r in pnl_rows %}
+              <tr>
+                <td>{{ r[1] }}</td>
+                <td>{{ r[2] }}</td>
+                <td class="num">{{ "{:,}".format(r[3] | int) }}</td>
+                <td class="num">{{ "{:,.0f}".format(r[4] | float) }}</td>
+                <td class="num">{{ "{:,.0f}".format(r[5] | float) }}</td>
+                <td class="num {% if (r[6] or 0) | float >= 0 %}text-success{% else %}text-danger{% endif %}">
+                  {% if r[6] is none %}—{% else %}{{ "{:,.0f}".format(r[6] | float) }}{% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phase 1 result: recent ingest batches -->
+  <div class="col-12">
+    <div class="card">
+      <div class="card-body">
+        <h2 class="h5 phase-1">Phase 1 — Ingest (recent batches)</h2>
+        <p class="muted">Most recent rows from <code>batch_audit</code>, all phases.</p>
+        <table class="table table-tight">
+          <thead><tr>
+            <th>Batch</th><th>Name</th><th>Type</th><th>Status</th>
+            <th class="num">OK</th><th class="num">Rej</th><th class="num">ms</th>
+          </tr></thead>
+          <tbody>
+            {% for b in recent_batches %}
+              <tr>
+                <td>{{ b[0] }}</td>
+                <td>{{ b[1] }}</td>
+                <td>
+                  {% if 'OPTIMIZED' in b[2] and 'NOT' not in b[2] %}
+                    <span class="pill pill-opt">{{ b[2] }}</span>
+                  {% elif 'NOT_OPTIMIZED' in b[2] %}
+                    <span class="pill pill-notopt">{{ b[2] }}</span>
+                  {% else %}
+                    <span class="pill">{{ b[2] }}</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if b[3] == 'SUCCESS' %}<span class="pill pill-good">{{ b[3] }}</span>
+                  {% elif b[3] == 'FAILED'  %}<span class="pill pill-bad">{{ b[3] }}</span>
+                  {% else %}<span class="pill pill-neutral">{{ b[3] }}</span>{% endif %}
+                </td>
+                <td class="num">{{ "{:,}".format(b[4] | int) if b[4] else "—" }}</td>
+                <td class="num">{{ "{:,}".format(b[5] | int) if b[5] else "—" }}</td>
+                <td class="num">{{ "{:,.0f}".format(b[6] | float) if b[6] else "—" }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endif %}
+{% endblock %}

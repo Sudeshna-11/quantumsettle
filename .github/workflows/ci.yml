@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop, "naive/**"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Schema + PL/SQL tests + pytest
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      oracle:
+        image: gvenzl/oracle-free:23-slim
+        env:
+          ORACLE_PASSWORD: Oracle_CI_Strong_Pw_42
+          APP_USER: qsettle
+          APP_USER_PASSWORD: Oracle_CI_Strong_Pw_42
+          ORACLE_DATABASE: QSPDB
+        ports:
+          - 1521:1521
+        # The healthcheck.sh inside the gvenzl image waits for QSPDB to be
+        # open in READ WRITE mode. First-boot init runs ~3-5 min on the
+        # GitHub-hosted Ubuntu runner; the start-period covers that.
+        options: >-
+          --health-cmd healthcheck.sh
+          --health-interval 20s
+          --health-timeout 10s
+          --health-retries 30
+          --health-start-period 240s
+
+    env:
+      QS_DB_DSN: localhost:1521/QSPDB
+      QS_DB_USER: qsettle
+      QS_DB_PASSWORD: Oracle_CI_Strong_Pw_42
+      QS_DB_ADMIN_USER: SYSTEM
+      QS_DB_ADMIN_PASSWORD: Oracle_CI_Strong_Pw_42
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Python deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Admin setup (tablespaces, grants, directory)
+        run: python -m quantumsettle.scripts.admin_setup
+
+      - name: Apply schema + packages + seed data
+        run: python -m quantumsettle.scripts.migrate
+
+      - name: Sanity check connection + schema
+        run: |
+          python -m quantumsettle.scripts.check_db
+          python -m quantumsettle.scripts.schema_summary
+
+      - name: Seed reference data (instruments, counterparties, accounts)
+        run: python -m quantumsettle.faker.run seed
+
+      - name: Run PL/SQL test suite
+        run: python -m quantumsettle.scripts.run_tests
+
+      - name: Run pytest smoke tests
+        run: pytest tests/py -v
+
+      - name: Diagnostic — print Oracle logs on failure
+        if: failure()
+        run: docker logs $(docker ps -a --filter ancestor=gvenzl/oracle-free:23-slim --format '{{.ID}}') || true

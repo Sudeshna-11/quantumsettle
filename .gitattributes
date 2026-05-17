@@ -1,0 +1,13 @@
+# Default to LF on checkout — Oracle init scripts and shell scripts must be LF.
+* text=auto eol=lf
+
+# Windows-only files (none currently, but reserve)
+*.ps1   text eol=crlf
+*.cmd   text eol=crlf
+*.bat   text eol=crlf
+
+# Binary
+*.png   binary
+*.jpg   binary
+*.gz    binary
+*.zip   binary

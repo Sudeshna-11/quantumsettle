@@ -1,0 +1,25 @@
+services:
+  oracle:
+    image: gvenzl/oracle-free:23-slim
+    container_name: quantumsettle-oracle
+    ports:
+      - "${ORACLE_PORT:-1521}:1521"
+    environment:
+      ORACLE_PASSWORD: ${ORACLE_PASSWORD}
+      APP_USER: ${APP_USER:-qsettle}
+      APP_USER_PASSWORD: ${APP_USER_PASSWORD}
+      ORACLE_DATABASE: ${ORACLE_DATABASE:-FREEPDB1}
+    volumes:
+      - oracle-data:/opt/oracle/oradata
+      - ./db/00_bootstrap:/container-entrypoint-initdb.d:ro
+      - ./data/staged:/opt/oracle/data/staged
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 60
+      start_period: 90s
+    restart: unless-stopped
+
+volumes:
+  oracle-data:
