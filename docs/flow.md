@@ -21,23 +21,23 @@ flowchart LR
     classDef tgt    fill:#455a64,stroke:#263238,color:#ffffff;
     classDef mv     fill:#5d4037,stroke:#321c19,color:#ffffff;
 
-    F[Python faker<br/>trades CSV]:::src
-    CSV[(data/staged/<br/>trades_*.csv)]:::src
+    F[Python faker]:::src
+    CSV[(staged trades.csv)]:::src
     EXT[EXT_TRADES<br/>external table]:::tgt
 
-    IOPT[PKG_INGEST<br/>OPTIMIZED<br/><i>FORALL + SAVE EXCEPTIONS</i>]:::opt
-    INOT[PKG_INGEST<br/>NOT_OPTIMIZED<br/><i>cursor FOR loop</i>]:::notopt
+    IOPT[PKG_INGEST_OPTIMIZED<br/>FORALL + SAVE EXCEPTIONS]:::opt
+    INOT[PKG_INGEST_NOT_OPTIMIZED<br/>cursor FOR loop]:::notopt
 
-    POPT[PKG_PROCESS<br/>OPTIMIZED<br/><i>set-based UPDATE,<br/>partition pruned</i>]:::opt
-    PNOT[PKG_PROCESS<br/>NOT_OPTIMIZED<br/><i>row-by-row UPDATE,<br/>no pruning</i>]:::notopt
+    POPT[PKG_PROCESS_OPTIMIZED<br/>set-based UPDATE<br/>partition pruned]:::opt
+    PNOT[PKG_PROCESS_NOT_OPTIMIZED<br/>row-by-row UPDATE<br/>no pruning]:::notopt
 
     TR[(trades<br/>partitioned by trade_date)]:::tgt
-    MV[(MV_DAILY_PNL<br/>fast-refresh<br/>on commit)]:::mv
+    MV[(MV_DAILY_PNL<br/>fast-refresh on commit)]:::mv
 
-    ROPT[PKG_REPORT<br/>OPTIMIZED<br/><i>reads MV</i>]:::opt
-    RNOT[PKG_REPORT<br/>NOT_OPTIMIZED<br/><i>NO_REWRITE,<br/>full GROUP BY</i>]:::notopt
+    ROPT[PKG_REPORT_OPTIMIZED<br/>reads MV]:::opt
+    RNOT[PKG_REPORT_NOT_OPTIMIZED<br/>NO_REWRITE GROUP BY]:::notopt
 
-    PERF((perf_metrics +<br/>FastAPI<br/>dashboard))
+    PERF((perf_metrics and<br/>FastAPI dashboard))
 
     F --> CSV --> EXT
     EXT --> IOPT
