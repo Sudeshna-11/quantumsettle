@@ -4,7 +4,7 @@
 *.pem
 *.key
 
-# Personal Claude Code config (per-developer; team-wide settings go in
+# Per-developer editor/agent config (team-wide settings, if any, go in
 # .claude/settings.json which is not gitignored)
 .claude/settings.local.json
 
