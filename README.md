@@ -12,10 +12,9 @@
 
 ## Why this project exists
 
-Most PL/SQL tutorials show you a single way to do a thing. This project shows
-you **two** ways for every phase and measures the gap, so the question
-"why FORALL instead of a cursor loop?" gets an actual number instead of a
-hand-wave.
+This project shows you **two** ways for every phase and measures the gap,
+so the question" why FORALL instead of a cursor loop?" gets an actual number
+instead of a hand-wave.
 
 The headline win is **partition pruning** in Phase 2 — the optimized
 `UPDATE` touches one monthly partition, the not-optimized one scans every
